@@ -68,10 +68,10 @@ class AppMetodosNumericos(tk.Tk):
         f_metodo.pack(fill=tk.X, pady=5)
         ttk.Label(f_metodo, text="Metodo:").pack(side=tk.LEFT, padx=(0, 10))
         self.var_metodo = tk.StringVar(value="aprox")
+        self.var_metodo.trace_add("write", lambda *_: self.actualizar_campos())
         for val, txt in [("aprox", "Aproximaciones Sucesivas"), ("newton", "Newton-Raphson"), ("secante", "Secante")]:
             rb = ttk.Radiobutton(f_metodo, text=txt, variable=self.var_metodo, value=val)
             rb.pack(side=tk.LEFT, padx=5)
-            rb.bind("<Button-1>", self.actualizar_campos)
 
         # Funcion g(x) para aprox sucesivas
         self.f_g = ttk.Frame(main)
@@ -101,14 +101,14 @@ class AppMetodosNumericos(tk.Tk):
         ttk.Label(self.f_fder, text="  (vacío = derivada numerica)").pack(side=tk.LEFT, padx=5)
 
         # Valores iniciales
-        f_val = ttk.Frame(main)
-        f_val.pack(fill=tk.X, pady=5)
-        ttk.Label(f_val, text="x0:").pack(side=tk.LEFT, padx=(0, 5))
-        self.entry_x0 = ttk.Entry(f_val, width=10)
+        self.f_val = ttk.Frame(main)
+        self.f_val.pack(fill=tk.X, pady=5)
+        ttk.Label(self.f_val, text="x0:").pack(side=tk.LEFT, padx=(0, 5))
+        self.entry_x0 = ttk.Entry(self.f_val, width=10)
         self.entry_x0.pack(side=tk.LEFT)
         self.entry_x0.insert(0, "0.5")
-        ttk.Label(f_val, text="  x1 (solo Secante):").pack(side=tk.LEFT, padx=(15, 5))
-        self.entry_x1 = ttk.Entry(f_val, width=10)
+        ttk.Label(self.f_val, text="  x1 (solo Secante):").pack(side=tk.LEFT, padx=(15, 5))
+        self.entry_x1 = ttk.Entry(self.f_val, width=10)
         self.entry_x1.pack(side=tk.LEFT)
         self.entry_x1.insert(0, "2.0")
 
@@ -125,14 +125,14 @@ class AppMetodosNumericos(tk.Tk):
         self.entry_b.insert(0, "1")
 
         # Parametros
-        f_param = ttk.Frame(main)
-        f_param.pack(fill=tk.X, pady=5)
-        ttk.Label(f_param, text="Max iteraciones:").pack(side=tk.LEFT, padx=(0, 5))
-        self.entry_iter = ttk.Entry(f_param, width=8)
+        self.f_param = ttk.Frame(main)
+        self.f_param.pack(fill=tk.X, pady=5)
+        ttk.Label(self.f_param, text="Max iteraciones:").pack(side=tk.LEFT, padx=(0, 5))
+        self.entry_iter = ttk.Entry(self.f_param, width=8)
         self.entry_iter.pack(side=tk.LEFT)
         self.entry_iter.insert(0, "50")
-        ttk.Label(f_param, text="  Error %:").pack(side=tk.LEFT, padx=(15, 5))
-        self.entry_error = ttk.Entry(f_param, width=8)
+        ttk.Label(self.f_param, text="  Error %:").pack(side=tk.LEFT, padx=(15, 5))
+        self.entry_error = ttk.Entry(self.f_param, width=8)
         self.entry_error.pack(side=tk.LEFT)
         self.entry_error.insert(0, "0.01")
 
@@ -149,10 +149,11 @@ class AppMetodosNumericos(tk.Tk):
 
     def actualizar_campos(self, event=None):
         m = self.var_metodo.get()
-        self.f_g.pack_forget() if m != "aprox" else self.f_g.pack(fill=tk.X, pady=5)
-        self.f_f.pack_forget() if m == "aprox" else self.f_f.pack(fill=tk.X, pady=5)
-        self.f_fder.pack_forget() if m != "newton" else self.f_fder.pack(fill=tk.X, pady=5)
-        self.f_lip.pack_forget() if m != "aprox" else self.f_lip.pack(fill=tk.X, pady=5)
+        # Usar before= para mantener el orden correcto al reaparecer (evita que queden debajo del area de resultados)
+        self.f_g.pack_forget() if m != "aprox" else self.f_g.pack(fill=tk.X, pady=5, before=self.f_val)
+        self.f_f.pack_forget() if m == "aprox" else self.f_f.pack(fill=tk.X, pady=5, before=self.f_val)
+        self.f_fder.pack_forget() if m != "newton" else self.f_fder.pack(fill=tk.X, pady=5, before=self.f_val)
+        self.f_lip.pack_forget() if m != "aprox" else self.f_lip.pack(fill=tk.X, pady=5, before=self.f_param)
         if m == "secante":
             self.entry_x1.config(state="normal")
         else:
