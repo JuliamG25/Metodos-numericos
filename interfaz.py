@@ -5,6 +5,7 @@ Interfaz grafica para Metodos Numericos
 - Metodo de la Secante
 """
 
+import re
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import math
@@ -39,6 +40,23 @@ def crear_funcion(expr: str):
 def derivada_numerica(f, x, h=1e-6):
     """Derivada numerica de f en x."""
     return (f(x + h) - f(x - h)) / (2 * h)
+
+
+def expr_a_legible(expr: str) -> str:
+    """Convierte expresion Python a notacion matematica legible."""
+    s = expr.strip()
+    # Orden: primero las mas largas para evitar reemplazos parciales
+    s = re.sub(r'\bexp\s*\(', 'e^(', s, flags=re.IGNORECASE)
+    s = re.sub(r'\bsqrt\s*\(', '√(', s, flags=re.IGNORECASE)
+    s = re.sub(r'\blog\s*\(', 'ln(', s, flags=re.IGNORECASE)
+    s = re.sub(r'\bpi\b', 'π', s, flags=re.IGNORECASE)
+    # Potencias: x**2 -> x², x**3 -> x³, x**n -> x^n
+    s = re.sub(r'\*\*2\b', '²', s)
+    s = re.sub(r'\*\*3\b', '³', s)
+    s = re.sub(r'\*\*\(-1\)', '⁻¹', s)
+    s = re.sub(r'\*\*\(-2\)', '⁻²', s)
+    s = re.sub(r'\*\*', '^', s)  # resto: ** -> ^
+    return s
 
 
 class AppMetodosNumericos(tk.Tk):
@@ -188,15 +206,19 @@ class AppMetodosNumericos(tk.Tk):
                 a, b = 0, 1
             L, cumple = verificar_lipschitz(g, (a, b))
             self.escribir(f"APROXIMACIONES SUCESIVAS (x = g(x))")
-            self.escribir(f"g(x) = {expr_g}")
-            self.escribir(f"Constante Lipschitz L ~ {L:.6f}  |  L < 1: {'Si (converge)' if cumple else 'No'}")
+            self.escribir(f"g(x) = {expr_a_legible(expr_g)}")
+            self.escribir(f"Constante Lipschitz L ~ {L:.6f}  |  L < 1: {'Si (convergencia garantizada)' if cumple else 'No (convergencia no garantizada)'}")
+            if not cumple:
+                self.escribir(f"Advertencia: L >= 1, la ecuacion puede no converger en este intervalo.")
             aprox, conv = aproximaciones_sucesivas(g, x0, max_iter, error_pct)
             self.escribir(f"x0 = {x0}  |  Iteraciones: {len(aprox)}  |  Convergio: {conv}")
-            self.escribir(f"Raiz aproximada: {aprox[-1]:.12f}")
-            for i, xi in enumerate(aprox[:10]):
+            if conv:
+                self.escribir(f"SOLUCION ENCONTRADA - Raiz aproximada: {aprox[-1]:.12f}")
+            else:
+                self.escribir(f"NO ES POSIBLE RESOLVER: La ecuacion no converge con los parametros dados.")
+                self.escribir(f"Ultima aproximacion (sin convergencia): {aprox[-1]:.12f}")
+            for i, xi in enumerate(aprox):
                 self.escribir(f"  x{i} = {xi:.10f}")
-            if len(aprox) > 10:
-                self.escribir(f"  ... ({len(aprox)} iteraciones)")
 
         elif metodo == "newton":
             try:
@@ -215,14 +237,16 @@ class AppMetodosNumericos(tk.Tk):
             else:
                 f_der = lambda x: derivada_numerica(f, x)
             self.escribir(f"NEWTON-RAPHSON (f(x) = 0)")
-            self.escribir(f"f(x) = {expr_f}")
+            self.escribir(f"f(x) = {expr_a_legible(expr_f)}")
             aprox, conv = newton_raphson(f, f_der, x0, max_iter, error_pct)
             self.escribir(f"x0 = {x0}  |  Iteraciones: {len(aprox)}  |  Convergio: {conv}")
-            self.escribir(f"Raiz aproximada: {aprox[-1]:.12f}")
-            for i, xi in enumerate(aprox[:10]):
+            if conv:
+                self.escribir(f"SOLUCION ENCONTRADA - Raiz aproximada: {aprox[-1]:.12f}")
+            else:
+                self.escribir(f"NO ES POSIBLE RESOLVER: La ecuacion no converge con los parametros dados.")
+                self.escribir(f"Ultima aproximacion (sin convergencia): {aprox[-1]:.12f}")
+            for i, xi in enumerate(aprox):
                 self.escribir(f"  x{i} = {xi:.10f}")
-            if len(aprox) > 10:
-                self.escribir(f"  ... ({len(aprox)} iteraciones)")
 
         else:  # secante
             try:
@@ -237,14 +261,16 @@ class AppMetodosNumericos(tk.Tk):
                 messagebox.showerror("Error", f"Expresion f(x) invalida: {e}")
                 return
             self.escribir(f"METODO DE LA SECANTE (f(x) = 0)")
-            self.escribir(f"f(x) = {expr_f}")
+            self.escribir(f"f(x) = {expr_a_legible(expr_f)}")
             aprox, conv = metodo_secante(f, x0, x1, max_iter, error_pct)
             self.escribir(f"x0 = {x0}, x1 = {x1}  |  Iteraciones: {len(aprox)}  |  Convergio: {conv}")
-            self.escribir(f"Raiz aproximada: {aprox[-1]:.12f}")
-            for i, xi in enumerate(aprox[:10]):
+            if conv:
+                self.escribir(f"SOLUCION ENCONTRADA - Raiz aproximada: {aprox[-1]:.12f}")
+            else:
+                self.escribir(f"NO ES POSIBLE RESOLVER: La ecuacion no converge con los parametros dados.")
+                self.escribir(f"Ultima aproximacion (sin convergencia): {aprox[-1]:.12f}")
+            for i, xi in enumerate(aprox):
                 self.escribir(f"  x{i} = {xi:.10f}")
-            if len(aprox) > 10:
-                self.escribir(f"  ... ({len(aprox)} iteraciones)")
 
 
 if __name__ == "__main__":
